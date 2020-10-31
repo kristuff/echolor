@@ -1,0 +1,215 @@
+#!/usr/bin/env bash
+#  
+#           _        _
+#    ___ __| |_  ___| |___ _ _
+#   / -_) _| ' \/ _ \ / _ \ '_|
+#   \___\__|_||_\___/_\___/_|
+#   
+#  ------------------------------------------------------------
+#  (c) copyright 2020 Kristuff <contact@kristuff.fr>
+#  For the full copyright and license information, please view 
+#  the LICENSE file that was distributed with this source code.
+#  ------------------------------------------------------------
+
+unset -f echolor
+unset -f echolorHELP 
+  
+# --------------
+# main function
+# --------------
+function echolor() {
+    local format color bg reset text REMOVE_NEWLINE
+    local -A colors backgrounds formats resets 
+    local -i nbargs 
+       
+    # populate styles
+    formats=(["bold"]=1 ["bright"]=1 ["dim"]=2 ["underlined"]=4 ["blink"]=5 ["reverse"]=7 ["hidden"]=8)
+    resets=(["all"]=0 ["bold"]=21 ["bright"]=21 ["dim"]=22 ["underlined"]=24 ["blink"]=25 ["reverse"]=27 ["hidden"]=28)
+    colors=(["black"]=30 ["red"]=31 ["green"]=32 ["yellow"]=33 ["blue"]=34 ["magenta"]=35 ["cyan"]=36 ["lightgray"]=37 ["default"]=39 ["darkgray"]=90 ["lightred"]=91 ["lightgreen"]=92 ["lightyellow"]=93 ["lightblue"]=94 ["lightmagenta"]=95 ["lightcyan"]=96 ["white"]=97)
+    backgrounds=(["black"]=40 ["red"]=41 ["green"]=42 ["yellow"]=43 ["blue"]=44 ["magenta"]=45 ["cyan"]=46 ["lightgray"]=47 ["default"]=49 ["darkgray"]=100 ["lightred"]=101 ["lightgreen"]=102 ["lightyellow"]=103 ["lightblue"]=104 ["lightmagenta"]=105 ["lightcyan"]=106 ["white"]=107)
+
+    # get number of arguments
+    nbargs="$#"
+    
+    # store arguments in a special array 
+    args=("$@") 
+   
+    # start with style 0 (reset)
+    # color/background default 
+    format=0
+    color=39
+    bg=49 
+    reset=""
+    
+    # get main argument
+    text="$1"
+
+    if [[ "$text" = "-h" || "$text" = "--help" ]]; then
+        echolorHELP
+        return
+    fi
+
+    # check first argument 
+    # we dont't do anything when the first argument is empty    
+    if [ ! -z "$text" ]; then
+        # ---------------
+        # parse arguments
+        # ---------------
+        for ((i=1;i<$nbargs;i++)); do 
+          
+            if [[ "${args[${i}]}" = "-c" || "${args[${i}]}" = "--color"  && ! -z "${colors[${args[$(( i + 1 ))]}]+x}" ]]; then 
+                color="${colors[${args[$(( i + 1 ))]}]}"; 
+            fi
+            if [[ "${args[${i}]}" = "-b" || "${args[${i}]}" = "--background"  && ! -z "${backgrounds[${args[$(( i + 1 ))]}]+x}" ]]; then
+                bg="${backgrounds[${args[$(( i + 1 ))]}]}"; 
+            fi
+            if [[ "${args[${i}]}" = "-f" || "${args[${i}]}" = "--format"  && ! -z "${formats[${args[$(( i + 1 ))]}]+x}" ]]; then 
+                format="${formats[${args[$(( i + 1 ))]}]}"; 
+            fi
+            if [[ "${args[${i}]}" = "-n" ]]; then 
+                REMOVE_NEWLINE=1; 
+            fi
+        done
+        
+        # -----
+        # print
+        # -----
+        if [ ! -z "$REMOVE_NEWLINE" ]; then
+            echo -en "\e[${format};${bg};${color}m${text}\e[0m"
+        else
+            echo -e "\e[${format};${bg};${color}m${text}\e[0m"
+        fi
+    fi
+}
+
+# --------------
+# HELP function
+# --------------
+function echolorHELP() {
+    local COLORS FORMATS BACKGROUNDS col format bg
+    local -i COUNTER
+
+    COLORS=(red green yellow blue magenta cyan lightgray default darkgray black lightred lightgreen lightyellow lightblue lightmagenta lightcyan white)
+    BACKGROUNDS=(red green black yellow blue magenta cyan lightgray default darkgray lightred lightgreen lightyellow lightblue lightmagenta lightcyan white)
+    FORMATS=(bold bright dim underlined reverse)
+   
+    echolor "  " -c darkgray 
+    echolor "  echolor " -c white -n
+    echolor " v1.0 " -c white -b green
+    echo
+    echolor " " -n
+    echolor "SYNOPSIS" -c white -f underlined
+    echolor "   echolor " -c grey -n
+    echolor "TEXT" -c lightyellow -n
+    echolor " [ -c " -c grey -n
+    echolor "<color>" -c yellow -n
+    echolor " -b " -c grey -n
+    echolor "<background>" -c yellow -n
+    echolor " -f  " -c grey -n
+    echolor "<format>" -c yellow -n
+    echolor " ] [ -n ]" -c grey
+    echolor "   echolor " -c grey -n
+    echolor "TEXT" -c lightyellow -n
+    echolor " [ --color " -c grey -n
+    echolor "<color>" -c yellow -n
+    echolor " --background " -c grey -n
+    echolor "<background>" -c yellow -n
+    echolor " --format " -c grey -n
+    echolor "<format>" -c yellow -n
+    echolor " ] [ -n ]" -c grey
+    echo     
+    echolor " " -n
+    echolor "OPTIONS" -c white -f underlined
+    echo
+    echolor "  -c <color>, --color <color>" -c white 
+    echolor "   Defines the foreground color. The given " -c grey -n
+    echolor "color" -c lightyellow -n
+    echolor " must be part of the known foreground colors:" -c grey
+    COUNTER=0
+    for f in "${!COLORS[@]}"; do
+        if [ "$COUNTER" = 0 ]; then
+            echolor "   " -n
+        fi 
+
+        COUNTER+=1
+        col="${COLORS[$f]}"
+
+        if [ "$col" = "black" ]; then
+            echolor "$col" -c "$col" -n -b lightgray
+        else
+            echolor "$col" -c "$col" -n 
+        fi
+        echolor " | " -n -c darkgray
+
+        if [ "$COUNTER" = 10 ]; then
+            echolor "   "
+            COUNTER=0 
+        fi
+    done
+    echolor " "
+    echo     
+    echolor "  -b <background>, --background <background>" -c white
+    echolor "   Defines the background color. The given " -c grey -n
+    echolor "background" -c lightyellow -n
+    echolor " must be part" - grey -n 
+    echolor " of the known background colors:" -c grey
+    COUNTER=0
+    for f in "${!BACKGROUNDS[@]}"; do
+        if [ "$COUNTER" = 0 ]; then
+            echolor "   " -n
+        fi
+        
+        COUNTER+=1
+        bg="${BACKGROUNDS[$f]}"
+        
+        if [ "$bg" = "black" ] || [ "$bg" = "default" ]; then
+            echolor " $bg " -c white -b "$bg" -n 
+        else
+            echolor " $bg " -c black -b "$bg" -n 
+        fi 
+        echolor " | " -n -c darkgray
+        
+        
+        if [ "$COUNTER" = 10 ]; then
+            echolor " "
+            COUNTER=0 
+        fi
+    done
+    echolor " "
+    echo
+    echolor "  -f <format>, --format <format>" -c white
+    echolor "   Defines the format. The given " -c grey -n
+    echolor "format" -c lightyellow -n
+    echolor " must be part of the known formats:" -c grey
+    echolor "   " -n
+    for f in "${!FORMATS[@]}"; do 
+        echolor "${FORMATS[$f]}" -c yellow -f "${FORMATS[$f]}" -n
+        echolor " " -n -f dim
+    done
+    echolor " " 
+    echo     
+    echolor "  -n" -c white
+    echolor "   Do not output the trailing newline." -c grey 
+    echo
+    echolor "  -h, --help" -c white
+    echolor "   Prints the current help." -c grey 
+    echo     
+    echolor " " -n
+    echolor "SAMPLE" -c white -f underlined
+    echolor "  # echolor \"text text text\" -c white -b red -f underlined" -c green 
+    echolor "  " -n 
+    echolor "text text text" -c white -b red -f underlined
+    echolor "  # echolor \"text text text \" -c yellow -n" -c green 
+    echolor "  # echolor \"more text\" -c white -f underlined" -c green 
+    echolor "  " -n 
+    echolor "text text text " -c yellow -n
+    echolor "more text" -c white -f underlined
+    echo
+}
+
+# ---------
+# execute ?
+# ---------
+if [ -z "$PS1" ]; then
+    echolor "$@"
+fi
