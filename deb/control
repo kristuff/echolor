@@ -1,0 +1,8 @@
+Package: echolor
+Version: 1.0
+Maintainer: kristuff <kristuff@kristuff.fr>
+Architecture: all
+Description: Simple Bash colorized echo
+ echolor is a simple Bash colorized echo. 
+Priority: optional
+Section: utils
